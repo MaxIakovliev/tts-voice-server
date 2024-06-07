@@ -2,6 +2,14 @@ uvicorn app.main:app --reload --port 8081
 
 uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
 
+## how to run websocker server using https certificate:
+
+```bash
+
+uvicorn app.main_websocket:app --host 0.0.0.0 --port 8080 --reload --ssl-keyfile key.pem --ssl-certfile cert.pem
+
+```
+
 
 
 http://localhost:8081/admin
@@ -11,9 +19,15 @@ https://www.reddit.com/r/LocalLLaMA/comments/1ckw7en/what_software_do_you_use_to
 
 here's an extended list of detailed technical features that a robust voice chat application should support:
 
-- <input type="checkbox" unchecked> Add  function "end call"
-- <input type="checkbox" unchecked> Add  button  "end call"
-- <input type="checkbox" unchecked> Assign function "end call" on button
+- <input type="checkbox" checked> Add  function "end call"
+- <input type="checkbox" checked> Add  button  "end call"
+- <input type="checkbox" checked> Assign function "end call" on button
+
+- <input type="checkbox" checked> Added support of https
+- <input type="checkbox" checked> write in  readme - how to use https
+- <input type="checkbox" checked> test https connection
+- <input type="checkbox" checked> test join room functionality from different machine
+
 
     Support of Creation of Rooms on Server
     Users Should Be Able to Create Rooms

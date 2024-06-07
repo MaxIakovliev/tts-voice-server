@@ -49,7 +49,8 @@ async function joinRoom() {
 }
 
 function setupWebSocket(roomId) {
-    websocket = new WebSocket(`ws://${window.location.host}/ws/${roomId}`);
+    //note: wss is required for secure connection
+    websocket = new WebSocket(`wss://${window.location.host}/ws/${roomId}`);
 
     websocket.onopen = async () => {
         document.getElementById('status').innerText += `\nWebSocket connection established.`;
