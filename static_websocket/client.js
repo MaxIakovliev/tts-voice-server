@@ -1,5 +1,6 @@
 document.getElementById('createRoom').addEventListener('click', createRoom);
 document.getElementById('joinRoom').addEventListener('click', joinRoom);
+document.getElementById('endCall').addEventListener('click', endCall);
 
 let websocket;
 let mediaStream;
@@ -7,6 +8,7 @@ let audioContext;
 let context;
 let source;
 let processor;
+let analyser;
 let roomId = '';
 // let mediaRecorder;
 // let audioChunks = [];
@@ -48,7 +50,7 @@ async function joinRoom() {
 
 function setupWebSocket(roomId) {
     websocket = new WebSocket(`ws://${window.location.host}/ws/${roomId}`);
-    
+
     websocket.onopen = async () => {
         document.getElementById('status').innerText += `\nWebSocket connection established.`;
         console.log('Starting audio capture...');
@@ -92,47 +94,55 @@ async function startAudioCapture() {
         audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
         context = new AudioContext();
 
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        globalStream = stream;
-        const input = context.createMediaStreamSource(stream);
-        processor = context.createScriptProcessor(bufferSize, 1, 1);
-        processor.onaudioprocess = e => processAudio(e);
-        input.connect(processor);
-        processor.connect(context.destination);
-        const analyser = context.createAnalyser();
-        const canvas = document.getElementById('audioMeter');
-        const canvasContext = canvas.getContext('2d');
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            globalStream = stream;
+            const input = context.createMediaStreamSource(stream);
+            
+            processor = context.createScriptProcessor(bufferSize, 1, 1);
+            analyser = context.createAnalyser();
+            analyser.fftSize = 256;
+            input.connect(analyser);
+            analyser.connect(processor);
+            processor.connect(context.destination);
+            
 
-        analyser.fftSize = 256;
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+            processor.onaudioprocess = e => processAudio(e);
+            // input.connect(processor);
+            // processor.connect(context.destination);
+            // const analyser = context.createAnalyser();
+            const canvas = document.getElementById('audioMeter');
+            const canvasContext = canvas.getContext('2d');
 
-        input.connect(analyser);
-        draw();
+            // analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
 
-        function draw() {
-            requestAnimationFrame(draw);
+            // input.connect(analyser);
+            draw();
 
-            analyser.getByteFrequencyData(dataArray);
+            function draw() {
+                requestAnimationFrame(draw);
 
-            canvasContext.fillStyle = 'rgb(0, 0, 0)';
-            canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+                analyser.getByteFrequencyData(dataArray);
 
-            var barWidth = (canvas.width / bufferLength) * 2.5;
-            var barHeight;
-            var x = 0;
+                canvasContext.fillStyle = 'rgb(0, 0, 0)';
+                canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 
-            for (var i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i];
+                var barWidth = (canvas.width / bufferLength) * 2.5;
+                var barHeight;
+                var x = 0;
 
-                canvasContext.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
-                canvasContext.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+                for (var i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i];
 
-                x += barWidth + 1;
+                    canvasContext.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
+                    canvasContext.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+
+                    x += barWidth + 1;
+                }
             }
-        }       
-    }).catch(error => console.error('Error accessing microphone', error));
-        
+        }).catch(error => console.error('Error accessing microphone', error));
+
     } catch (err) {
         console.error('Error capturing audio:', err);
         document.getElementById('status').innerText += `\nError capturing audio: ${err.message}`;
@@ -180,7 +190,7 @@ async function startAudioCapture() {
             console.log('Voice detected, resuming audio transmission.');
             isSendingAudio = true;
         }
-        
+
         if (websocket && websocket.readyState === WebSocket.OPEN && isSendingAudio) {
             websocket.send(audioData);
         }
@@ -262,7 +272,28 @@ async function getMicrophones() {
         option.text = mic.label || `Microphone ${index + 1}`;
         micList.appendChild(option);
     });
-
 }
+
+    function endCall() {
+        if (websocket) {
+            websocket.close();
+        }
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+        if (processor) {
+            processor.disconnect();
+        }
+        if (analyser) {
+            analyser.disconnect();
+        }
+        if (audioContext) {
+            audioContext.close();
+        }
+        document.getElementById('status').innerText += `\nCall ended.`;
+        console.log('Call ended.');
+    }
+
+
 
 window.onload = getMicrophones;
