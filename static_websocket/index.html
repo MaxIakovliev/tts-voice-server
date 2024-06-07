@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Chat Room</title>
+</head>
+<body>
+    <h1>Voice Chat Room</h1>
+    <button id="createRoom">Create Room</button>
+    <input type="text" id="roomId" placeholder="Enter Room ID to Join">
+    <button id="joinRoom">Join Room</button>
+    <div id="status"></div>
+
+    <label for="microphoneList">Choose a microphone:</label>
+    <select id="microphoneList"></select>
+    <canvas id="audioMeter" width="300" height="50"></canvas>
+
+    <script src="/static_websocket/client.js"></script>
+</body>
+</html>
