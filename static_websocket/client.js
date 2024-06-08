@@ -1,6 +1,8 @@
 document.getElementById('createRoom').addEventListener('click', createRoom);
 document.getElementById('joinRoom').addEventListener('click', joinRoom);
 document.getElementById('endCall').addEventListener('click', endCall);
+document.getElementById('muteUnmute').addEventListener('click', muteUnmuteMicrophone);
+
 
 let websocket;
 let mediaStream;
@@ -17,7 +19,7 @@ let silenceThreshold = 0.005; // Adjust this value based on your needs
 let silenceTimeout = 1000; // Time in ms to wait before considering it as silence
 let silenceTimer = null;
 let isSendingAudio = true;
-
+let isMuted = false;
 const bufferSize = 4096;
 
 async function createRoom() {
@@ -50,7 +52,10 @@ async function joinRoom() {
 
 function setupWebSocket(roomId) {
     //note: wss is required for secure connection
-    websocket = new WebSocket(`wss://${window.location.host}/ws/${roomId}`);
+    // websocket = new WebSocket(`wss://${window.location.host}/ws/${roomId}`);
+
+    //for regular http connection
+    websocket = new WebSocket(`ws://${window.location.host}/ws/${roomId}`);
 
     websocket.onopen = async () => {
         document.getElementById('status').innerText += `\nWebSocket connection established.`;
@@ -174,6 +179,8 @@ async function startAudioCapture() {
 
 
     function processAudio(e) {
+        if (isMuted) return;
+
         const inputSampleRate = context.sampleRate;
         const outputSampleRate = 16000; // Target sample rate
 
@@ -294,7 +301,33 @@ async function getMicrophones() {
         document.getElementById('status').innerText += `\nCall ended.`;
         console.log('Call ended.');
     }
+    async function loadRooms() {
+        const response = await fetch('/get-rooms');
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Rooms:', data);
+            if (data.length === 0) {
+                return; // Do nothing if data contains no elements
+            }
+            const roomList = document.getElementById('roomList');
+            roomList.innerHTML = ''; // Clear the existing list
+            data.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room;
+                option.text = room;
+                roomList.appendChild(option);
+            });
+        } else {
+            console.error('Failed to load rooms:', response.statusText);
+        }
+    }
+    function muteUnmuteMicrophone() {
+        isMuted = !isMuted;
+        const muteUnmuteButton = document.getElementById('muteUnmute');
+        muteUnmuteButton.innerText = isMuted ? 'Unmute' : 'Mute';
+        console.log(isMuted ? 'Microphone muted.' : 'Microphone unmuted.');
+    }
 
-
+    loadRooms();
 
 window.onload = getMicrophones;

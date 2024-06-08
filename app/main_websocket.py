@@ -116,7 +116,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
 async def create_room():
     room_id = str(uuid.uuid4())
     rooms[room_id] = []
-    return {"room_id": room_id[:8]}
+    return {"room_id": room_id}
 
 @app.get("/create_room/")
 async def create_room_get():
@@ -132,7 +132,9 @@ async def connect_room(room_id: str):
     else:
         return {"message": "Room not found."}
 
-
+@app.get("/get-rooms")
+async def get_rooms():
+    return list(rooms.keys())
 
 #how to run this code
 #
